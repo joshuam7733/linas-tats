@@ -1,0 +1,7 @@
+:HL["/linas-tats/_next/static/chunks/12d9nucyx33nc.css","style"]
+:HL["/linas-tats/_next/static/media/a3264cb69f626630-s.p.2w0lnotpt__ns.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/linas-tats/_next/static/media/a343f882a40d2cc9-s.p.0p-wng2nn8o-p.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/linas-tats/_next/static/media/e8f2fbee2754df70-s.p.1dqa_6e_ad4sj.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
+:HL["/linas-tats/brand/logo-badge.png","image"]
+1:[["children",{"s":"__PAGE__","h":160}]]
+0:{"b":"a2k2Q4t3qveUbapMey9-p","t":{"t":{"s":"","h":80,"c":"$Q1"}}}

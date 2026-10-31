@@ -1,0 +1,4 @@
+:HL["/linas-tats/_next/static/chunks/12d9nucyx33nc.css","style"]
+2:[["children",{"s":"__PAGE__","h":160}]]
+1:[["children",{"s":"/_not-found","h":96,"c":"$Q2"}]]
+0:{"b":"a2k2Q4t3qveUbapMey9-p","t":{"t":{"s":"","h":80,"c":"$Q1"}}}
