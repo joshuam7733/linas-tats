@@ -1,7 +1,14 @@
 import type { Metadata, Viewport } from 'next';
 import { Manrope, Montserrat } from 'next/font/google';
 import { site } from '@/config/site';
+import { asset } from '@/lib/asset';
 import './globals.css';
+
+// Background images used in globals.css, set here so they pick up the deploy base path.
+const assetUrls = {
+  '--flash-wall-url': `url('${asset('/art/flash-wall.svg')}')`,
+  '--viewer-backdrop-url': `url('${asset('/art/viewer-backdrop.webp')}')`,
+} as React.CSSProperties;
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -30,7 +37,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${montserrat.variable} ${manrope.variable}`}>
+    <html lang="en" className={`${montserrat.variable} ${manrope.variable}`} style={assetUrls}>
       <body className="min-h-dvh">{children}</body>
     </html>
   );

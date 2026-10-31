@@ -1,3 +1,4 @@
+import { asset } from '@/lib/asset';
 import type { AreaId, BodyId } from '@/lib/concept';
 
 export type CameraView = 'front' | 'back' | 'left' | 'right';
@@ -50,7 +51,7 @@ const RIBS_DIR: Vec3 = [-1, 0, -1.2];
 /* Models face +Z, +X is the body's left side. Both are CC0 MakeHuman-derived meshes (see ATTRIBUTION.md). */
 export const BODIES: Record<BodyId, BodySpec> = {
   man: {
-    url: '/models/man.glb',
+    url: asset('/models/man.glb'),
     views: views(1.7, 4.0),
     areas: {
       chest: { origin: [0.085, 1.245, 1], dir: [0, 0, -1], camera: [0.18, 0.08, 1], distance: 0.8 },
@@ -70,7 +71,7 @@ export const BODIES: Record<BodyId, BodySpec> = {
     },
   },
   woman: {
-    url: '/models/woman.glb',
+    url: asset('/models/woman.glb'),
     views: views(1.59, 3.8),
     areas: {
       chest: { origin: [0.075, 1.275, 1], dir: [0, 0, -1], camera: [0.18, 0.12, 1], distance: 0.75 },

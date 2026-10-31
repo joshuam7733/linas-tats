@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { site } from '@/config/site';
+import { asset } from '@/lib/asset';
 import { openBooking } from './booking/events';
 
 const NAV = [
@@ -48,7 +49,7 @@ export default function SiteHeader() {
         <a href="#top" className="flex items-center gap-3 text-bone" aria-label={`${site.name}, back to top`}>
           <span className="logo-badge block h-12 w-12 shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/logo-badge.png" alt="" width={48} height={48} className="logo-badge-spin h-full w-full object-contain" />
+            <img src={asset('/brand/logo-badge.png')} alt="" width={48} height={48} className="logo-badge-spin h-full w-full object-contain" />
           </span>
           <span className="wordmark hidden text-[0.95rem] lg:inline">{site.name}</span>
         </a>

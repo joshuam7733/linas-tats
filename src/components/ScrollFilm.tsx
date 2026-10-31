@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
+import { asset } from '@/lib/asset';
 import type { FilmManifest } from '@/lib/film';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 
 const SCROLL_SCREENS = 4.5; // how many screen-heights of scrolling the film spans
-const BASE = '/film';
+const BASE = asset('/film');
 const frameUrl = (variant: string, i: number) => `${BASE}/${variant}/${String(i).padStart(4, '0')}.webp`;
 
 export interface FilmCaption {

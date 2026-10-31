@@ -1,4 +1,5 @@
 import studioArt from '../../public/art/tattoos/manifest.json';
+import { asset } from './asset';
 
 /**
  * Sample tattoo designs, grouped into five styles.
@@ -506,7 +507,7 @@ const studio: TattooDesign[] = STUDIO.filter(([id]) => id in studioArt).map(([id
   suggestedCm,
   width: studioArt[id as keyof typeof studioArt].w,
   height: studioArt[id as keyof typeof studioArt].h,
-  image: `/art/tattoos/${id}.png`,
+  image: asset(`/art/tattoos/${id}.png`),
 }));
 
 /** Studio designs first in every style, then the drawn ones. */

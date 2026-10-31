@@ -1,6 +1,7 @@
 // Server-only: reads the filesystem at build time.
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { asset } from './asset';
 
 /**
  * Studio photo slots. Drop real photos into `public/studio/` using these names (jpg, jpeg, png or webp)
@@ -22,7 +23,7 @@ const EXTENSIONS = ['webp', 'jpg', 'jpeg', 'png'];
 export function photo(slot: PhotoSlot): string | null {
   const { name } = PHOTO_SLOTS[slot];
   for (const ext of EXTENSIONS) {
-    if (existsSync(path.join(process.cwd(), 'public', 'studio', `${name}.${ext}`))) return `/studio/${name}.${ext}`;
+    if (existsSync(path.join(process.cwd(), 'public', 'studio', `${name}.${ext}`))) return asset(`/studio/${name}.${ext}`);
   }
   return null;
 }

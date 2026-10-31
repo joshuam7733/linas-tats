@@ -7,6 +7,7 @@ import SiteHeader from '@/components/SiteHeader';
 import StudioPhoto from '@/components/StudioPhoto';
 import TattooPreview from '@/components/preview/TattooPreview';
 import { instagramUrl, mapsUrl, site } from '@/config/site';
+import { asset } from '@/lib/asset';
 import { BONE, designDataUrl, getDesign } from '@/lib/designs';
 import { filmManifest } from '@/lib/film';
 
@@ -347,7 +348,7 @@ export default function Home() {
           <div>
             <div className="flex items-center gap-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/brand/logo-badge.png" alt="" width={72} height={72} className="h-[72px] w-[72px]" />
+              <img src={asset('/brand/logo-badge.png')} alt="" width={72} height={72} className="h-[72px] w-[72px]" />
               <p className="wordmark text-2xl text-bone">{site.name}</p>
             </div>
             <p className="mt-2 text-sm text-mute">
