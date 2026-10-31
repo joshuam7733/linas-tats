@@ -1,0 +1,33 @@
+{
+  "name": "linas-tats",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "tsc --noEmit",
+    "film": "node scripts/film/extract-film.mjs",
+    "art": "node scripts/art/process-art.mjs",
+    "optimize-model": "node scripts/optimize-model.mjs assets/human-base-rigged.glb public/models/man.glb && node scripts/optimize-model.mjs assets/female-base-mesh.glb public/models/woman.glb"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
+    "next": "^16.4.2",
+    "react": "~19.3.1",
+    "react-dom": "~19.3.1",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@gltf-transform/cli": "^4.5.1",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/three": "^0.186.0",
+    "meshoptimizer": "^1.2.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.0"
+  }
+}

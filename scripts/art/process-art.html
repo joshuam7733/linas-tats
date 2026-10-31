@@ -1,0 +1,222 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Art processing</title>
+<body style="margin:0;background:#111;color:#eee;font:14px system-ui;padding:24px">
+  <p id="status">Working…</p>
+  <div id="previews" style="display:flex;flex-wrap:wrap;gap:12px"></div>
+  <script>
+    const INK = [20, 20, 20];
+    const BONE = [239, 232, 220];
+    const status = (t) => (document.getElementById('status').textContent = t);
+
+    // The studio's design sheets (assets/designs/<id>.jpg) → ink on transparent, colour kept.
+    // `cut` trims a fraction off an edge first (e.g. a stray border line in the scan).
+    const DESIGNS = [
+      'clown', 'winged-heart', 'ace', 'liberty', 'lion', 'lion-line', 'roaring-lion', 'money-rose', 'tiger-eye',
+      'symbiote', 'thorn-cross', 'angel-demon', 'capricorn', 'scales', 'butterfly-moon', 'sun-moon-lily', 'lotus', 'yin-yang',
+    ].map((id) => ({ id })).concat([{ id: 'hourglass', cut: { top: 0.02 } }]);
+
+    // Backdrop for the 3D viewer: realism and etched line art in faint bone, like a sketch wall.
+    const BACKDROP = {
+      out: 'public/art/viewer-backdrop.webp',
+      size: [1600, 1100],
+      opacity: 0.24,
+      pieces: [
+        { src: '/assets/art/aic-92343-delacroix-tiger-etching.jpg', crop: [20, 20, 800, 650], at: [-40, 560, 820], rotate: -4, white: 0.78, black: 0.2, mask: { ellipse: [0.5, 0.5, 0.62, 0.62], feather: 0.4 } },
+        { src: '/assets/art/aic-114932-raphael-hand.jpg', crop: [0, 10, 480, 840], at: [1180, -40, 420], rotate: 8, white: 0.7, black: 0.16, mask: { ellipse: [0.5, 0.42, 0.62, 0.62], feather: 0.35 } },
+        { src: '/assets/art/aic-14446-delacroix-sketches.jpg', crop: [440, 310, 330, 140], at: [1080, 820, 520], rotate: -3, white: 0.85, black: 0.2, mask: { ellipse: [0.5, 0.5, 0.65, 0.65], feather: 0.3 } },
+        { src: '/assets/art/aic-85824-wolf-heads.jpg', crop: [320, 80, 240, 240], at: [80, 40, 330], rotate: -10, white: 0.6, black: 0.25, mask: { ellipse: [0.5, 0.5, 0.6, 0.6], feather: 0.35 } },
+        { src: '/assets/art/aic-14446-delacroix-sketches.jpg', crop: [70, 50, 160, 420], at: [560, -60, 260], rotate: 6, white: 0.85, black: 0.2, mask: { ellipse: [0.5, 0.5, 0.62, 0.62], feather: 0.3 } },
+        { src: '/assets/art/aic-41095-delacroix-royal-tiger.jpg', crop: [130, 262, 590, 214], at: [700, 470, 520], rotate: 0, white: 0.62, black: 0.12, mask: { ellipse: [0.5, 0.58, 0.56, 0.62], feather: 0.4 } },
+      ],
+    };
+
+    const loadImage = (src) =>
+      new Promise((ok, fail) => {
+        const img = new Image();
+        img.onload = () => ok(img);
+        img.onerror = () => fail(new Error('Could not load ' + src));
+        img.src = src;
+      });
+
+    async function videoFrame(src, time) {
+      const v = document.createElement('video');
+      v.muted = true;
+      v.src = src;
+      await new Promise((ok, fail) => ((v.onloadeddata = ok), (v.onerror = () => fail(new Error('decode failed')))));
+      v.currentTime = time;
+      await new Promise((ok) => v.addEventListener('seeked', ok, { once: true }));
+      return v;
+    }
+
+    const smooth = (a, b, x) => {
+      const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+      return t * t * (3 - 2 * t);
+    };
+
+    // Crop a source, convert darkness to ink opacity and fade the edges. Returns a canvas in `color`.
+    function inkify(source, job, color, maxEdge = 1000) {
+      const [cx, cy, cw, ch] = job.crop;
+      const scale = Math.min(1, maxEdge / Math.max(cw, ch)) * (job.upscale ?? 1);
+      const w = Math.round(cw * scale);
+      const h = Math.round(ch * scale);
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const g = c.getContext('2d');
+      g.drawImage(source, cx, cy, cw, ch, 0, 0, w, h);
+      const img = g.getImageData(0, 0, w, h);
+      const d = img.data;
+      const [ex, ey, rx, ry] = job.mask.ellipse;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4;
+          const lum = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255;
+          let ink = Math.max(0, Math.min(1, (job.white - lum) / (job.white - job.black)));
+          ink = Math.pow(ink, job.gamma ?? 1);
+          const dx = (x / w - ex) / rx;
+          const dy = (y / h - ey) / ry;
+          const r = Math.sqrt(dx * dx + dy * dy);
+          const fade = 1 - smooth(1 - job.mask.feather, 1, r);
+          d[i] = color[0];
+          d[i + 1] = color[1];
+          d[i + 2] = color[2];
+          d[i + 3] = Math.round(255 * ink * fade);
+        }
+      }
+      g.putImageData(img, 0, 0);
+      return c;
+    }
+
+    function preview(canvas, label) {
+      const wrap = document.createElement('figure');
+      wrap.style.cssText = 'margin:0;background:#d9b08c;padding:6px';
+      canvas.style.cssText = 'height:180px;display:block';
+      wrap.append(canvas, Object.assign(document.createElement('figcaption'), { textContent: label }));
+      document.getElementById('previews').append(wrap);
+    }
+
+    const post = (out, dataUrl) => fetch('/out?path=' + encodeURIComponent(out), { method: 'POST', body: dataUrl });
+
+    // "Colour to alpha" against the paper colour: white → transparent, grey → partly transparent black,
+    // colour stays colour. Then trims to the artwork and caps the size.
+    function toTattoo(img, job, maxEdge = 1024) {
+      const W = img.naturalWidth;
+      const H = img.naturalHeight;
+      const c = document.createElement('canvas');
+      c.width = W;
+      c.height = H;
+      const g = c.getContext('2d', { willReadFrequently: true });
+      g.drawImage(img, 0, 0);
+      const data = g.getImageData(0, 0, W, H);
+      const d = data.data;
+      const cut = { top: 0, bottom: 0, left: 0, right: 0, ...(job.cut || {}) };
+      const x0 = Math.round(W * cut.left), x1 = Math.round(W * (1 - cut.right));
+      const y0 = Math.round(H * cut.top), y1 = Math.round(H * (1 - cut.bottom));
+
+      // Paper brightness from the border band (30th percentile), so off-white scans go fully clear.
+      const border = [];
+      for (let y = y0; y < y1; y += 3) for (let x = x0; x < x1; x += 3) {
+        if (x - x0 > W * 0.04 && x1 - x > W * 0.04 && y - y0 > H * 0.04 && y1 - y > H * 0.04) continue;
+        const i = (y * W + x) * 4;
+        border.push((d[i] + d[i + 1] + d[i + 2]) / 3);
+      }
+      border.sort((a, b) => a - b);
+      const paper = Math.max(170, border[Math.floor(border.length * 0.3)] || 255);
+      const gain = 255 / paper;
+
+      let minX = W, minY = H, maxX = 0, maxY = 0;
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const i = (y * W + x) * 4;
+        if (x < x0 || x >= x1 || y < y0 || y >= y1) { d[i + 3] = 0; continue; }
+        const r = Math.min(1, (d[i] * gain) / 255), gr = Math.min(1, (d[i + 1] * gain) / 255), b = Math.min(1, (d[i + 2] * gain) / 255);
+        const a = Math.max(1 - r, 1 - gr, 1 - b);
+        const alpha = Math.max(0, Math.min(1, (a - 0.05) / 0.9));
+        if (alpha <= 0) { d[i + 3] = 0; continue; }
+        const un = (v) => Math.max(0, Math.min(1, 1 - (1 - v) / a));
+        d[i] = Math.round(un(r) * 255);
+        d[i + 1] = Math.round(un(gr) * 255);
+        d[i + 2] = Math.round(un(b) * 255);
+        d[i + 3] = Math.round(alpha * 255);
+        if (alpha > 0.1) { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); }
+      }
+      g.putImageData(data, 0, 0);
+      const pad = Math.round(Math.max(W, H) * 0.015);
+      minX = Math.max(0, minX - pad); minY = Math.max(0, minY - pad);
+      maxX = Math.min(W - 1, maxX + pad); maxY = Math.min(H - 1, maxY + pad);
+      const cw = maxX - minX + 1, ch = maxY - minY + 1;
+      const scale = Math.min(1, maxEdge / Math.max(cw, ch));
+      const out = document.createElement('canvas');
+      out.width = Math.round(cw * scale);
+      out.height = Math.round(ch * scale);
+      out.getContext('2d').drawImage(c, minX, minY, cw, ch, 0, 0, out.width, out.height);
+      return out;
+    }
+
+    async function run() {
+      const manifest = {};
+      for (const job of DESIGNS) {
+        status('Design: ' + job.id);
+        const c = toTattoo(await loadImage(`/assets/designs/${job.id}.jpg`), job);
+        await post(`public/art/tattoos/${job.id}.png`, c.toDataURL('image/png'));
+        manifest[job.id] = { w: c.width, h: c.height };
+        preview(c, job.id);
+      }
+      await post('public/art/tattoos/manifest.json', 'data:application/json;base64,' + btoa(JSON.stringify(manifest, null, 2)));
+
+      status('Backdrop');
+      const [bw, bh] = BACKDROP.size;
+      const back = document.createElement('canvas');
+      back.width = bw;
+      back.height = bh;
+      const bg = back.getContext('2d');
+      for (const piece of BACKDROP.pieces) {
+        const src = await loadImage(piece.src);
+        const c = inkify(src, piece, BONE, 1200);
+        const [x, y, width] = piece.at;
+        const height = (c.height / c.width) * width;
+        bg.save();
+        bg.globalAlpha = BACKDROP.opacity;
+        bg.translate(x + width / 2, y + height / 2);
+        bg.rotate((piece.rotate * Math.PI) / 180);
+        bg.drawImage(c, -width / 2, -height / 2, width, height);
+        bg.restore();
+      }
+      await post(BACKDROP.out, back.toDataURL('image/webp', 0.8));
+      const shown = document.createElement('canvas');
+      shown.width = 480;
+      shown.height = 330;
+      const sg = shown.getContext('2d');
+      sg.fillStyle = '#111';
+      sg.fillRect(0, 0, 480, 330);
+      sg.drawImage(back, 0, 0, 480, 330);
+      preview(shown, 'viewer-backdrop');
+
+      status('Logo');
+      const logo = await loadImage('/assets/brand/linustats-logo.jpg');
+      const badge = inkify(logo, { crop: [0, 0, logo.naturalWidth, logo.naturalHeight], white: 0.88, black: 0.2, mask: { ellipse: [0.5, 0.5, 9, 9], feather: 0.01 } }, BONE, 600);
+      await post('public/brand/logo-badge.png', badge.toDataURL('image/png'));
+      preview(badge, 'logo-badge');
+
+      // App icon: the badge on a dark rounded square, readable on light and dark browser tabs.
+      const icon = document.createElement('canvas');
+      icon.width = icon.height = 256;
+      const ig = icon.getContext('2d');
+      ig.fillStyle = '#0a0a0a';
+      ig.beginPath();
+      ig.roundRect(0, 0, 256, 256, 56);
+      ig.fill();
+      ig.drawImage(badge, 14, 14, 228, 228);
+      await post('src/app/icon.png', icon.toDataURL('image/png'));
+      preview(icon, 'icon');
+
+      status('Done');
+      window.__done = true;
+    }
+
+    run().catch((e) => {
+      status('Failed: ' + e.message);
+      window.__error = e.message;
+    });
+  </script>
+</body>

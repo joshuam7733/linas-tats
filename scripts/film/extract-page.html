@@ -1,0 +1,102 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Film frame extraction</title>
+<body style="margin:0;background:#111;color:#eee;font:14px system-ui;padding:24px">
+  <p id="status">Preparing…</p>
+  <canvas id="preview" width="320" height="180" style="border:1px solid #333"></canvas>
+  <script>
+    const S = __SETTINGS__;
+    const status = (t) => (document.getElementById('status').textContent = t);
+    const preview = document.getElementById('preview').getContext('2d');
+
+    async function loadClip(i) {
+      const v = document.createElement('video');
+      v.muted = true;
+      v.preload = 'auto';
+      v.src = '/clip/' + i;
+      await new Promise((ok, fail) => {
+        v.onloadeddata = ok;
+        v.onerror = () => fail(new Error('Could not decode clip ' + i));
+      });
+      return v;
+    }
+
+    async function seek(v, t) {
+      const target = Math.max(0, Math.min(v.duration - 0.04, t));
+      if (Math.abs(v.currentTime - target) < 0.001 && v.readyState >= 2) return;
+      v.currentTime = target;
+      await new Promise((ok) => v.addEventListener('seeked', ok, { once: true }));
+    }
+
+    // Draw a video frame to fill the canvas (cover), cropping from the centre.
+    function cover(ctx, v, w, h, alpha) {
+      const scale = Math.max(w / v.videoWidth, h / v.videoHeight);
+      const sw = w / scale;
+      const sh = h / scale;
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(v, (v.videoWidth - sw) / 2, (v.videoHeight - sh) / 2, sw, sh, 0, 0, w, h);
+      ctx.globalAlpha = 1;
+    }
+
+    async function run() {
+      const clips = [];
+      for (let i = 0; i < S.clips; i++) clips.push(await loadClip(i));
+      // Clip k starts where the previous one ends, minus the dissolve overlap.
+      const starts = [];
+      let t = 0;
+      clips.forEach((v, k) => {
+        starts.push(t);
+        t += v.duration - (k < clips.length - 1 ? S.overlap : 0);
+      });
+      const total = t;
+      const count = Math.floor(total * S.fps);
+      const canvases = ['desktop', 'mobile'].map((variant) => {
+        const c = document.createElement('canvas');
+        c.width = S[variant].width;
+        c.height = S[variant].height;
+        return { variant, c, ctx: c.getContext('2d'), quality: S[variant].quality };
+      });
+
+      for (let f = 0; f < count; f++) {
+        const time = f / S.fps;
+        const layers = [];
+        clips.forEach((v, k) => {
+          const local = time - starts[k];
+          if (local < 0 || local > v.duration) return;
+          // Fade the incoming clip in across the overlap.
+          const alpha = k > 0 && local < S.overlap ? local / S.overlap : 1;
+          layers.push({ v, local, alpha });
+        });
+        for (const layer of layers) await seek(layer.v, layer.local);
+        for (const { variant, c, ctx, quality } of canvases) {
+          ctx.fillStyle = '#000';
+          ctx.fillRect(0, 0, c.width, c.height);
+          for (const layer of layers) cover(ctx, layer.v, c.width, c.height, layer.alpha);
+          await fetch(`/frame?variant=${variant}&i=${f}`, { method: 'POST', body: c.toDataURL('image/webp', quality) });
+        }
+        preview.drawImage(canvases[0].c, 0, 0, 320, 180);
+        status(`Frame ${f + 1} / ${count}`);
+        window.__progress = { done: f + 1, count };
+      }
+
+      // Scene boundaries (as a fraction of the film) let the page time its captions.
+      const scenes = starts.map((s) => s / total);
+      const manifest = {
+        fps: S.fps,
+        count,
+        duration: total,
+        scenes,
+        desktop: { width: S.desktop.width, height: S.desktop.height },
+        mobile: { width: S.mobile.width, height: S.mobile.height },
+      };
+      await fetch('/manifest', { method: 'POST', body: JSON.stringify(manifest) });
+      status(`Done: ${count} frames`);
+      window.__progress = { done: count, count, finished: true };
+    }
+
+    run().catch((e) => {
+      status('Failed: ' + e.message);
+      window.__progress = { error: e.message };
+    });
+  </script>
+</body>

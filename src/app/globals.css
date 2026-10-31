@@ -1,0 +1,573 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-ink-950: #070707;
+  --color-ink-900: #0c0c0c;
+  --color-ink-850: #111110;
+  --color-ink-800: #161615;
+  --color-ink-700: #1f1e1c;
+  --color-bone: #efe8dc;
+  --color-bone-dim: #d9d1c3;
+  --color-mute: #a39d92;
+  --color-faint: #6f6a62;
+  --color-red: #c4302b;
+  --color-red-bright: #de3d36;
+  --color-line: rgb(239 232 220 / 0.12);
+  --color-line-strong: rgb(239 232 220 / 0.24);
+
+  --font-display: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+  --font-sans: var(--font-manrope), 'Manrope', system-ui, sans-serif;
+
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 4.5rem;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-ink-950);
+    color: var(--color-bone);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+  }
+  ::selection {
+    background: rgb(196 48 43 / 0.45);
+    color: var(--color-bone);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-bone);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@layer components {
+  /* Tracked uppercase micro-labels, as in "01 · DESIGN". */
+  .label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--color-mute);
+  }
+  .label-num {
+    color: var(--color-bone);
+  }
+  .wordmark {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+  }
+
+  .btn-bone,
+  .btn-red,
+  .btn-line {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    min-height: 48px;
+    padding: 0 1.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    transition:
+      background-color 180ms ease,
+      border-color 180ms ease,
+      color 180ms ease,
+      box-shadow 260ms ease,
+      transform 260ms var(--ease-out-soft);
+  }
+  /* A sheen that sweeps across on hover. */
+  .btn-bone::after,
+  .btn-red::after,
+  .btn-line::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 0.35) 50%, transparent 70%);
+    transform: translateX(-120%);
+    transition: transform 700ms var(--ease-out-soft);
+    pointer-events: none;
+  }
+  .btn-bone:hover:not(:disabled)::after,
+  .btn-red:hover:not(:disabled)::after,
+  .btn-line:hover:not(:disabled)::after {
+    transform: translateX(120%);
+  }
+  .btn-bone:hover:not(:disabled),
+  .btn-red:hover:not(:disabled),
+  .btn-line:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+  .btn-bone {
+    background: var(--color-bone);
+    color: var(--color-ink-950);
+  }
+  .btn-bone:hover:not(:disabled) {
+    background: #fff;
+    box-shadow: 0 10px 30px -10px rgb(239 232 220 / 0.45);
+  }
+  .btn-red {
+    background: var(--color-red);
+    color: #fff;
+  }
+  .btn-red:hover:not(:disabled) {
+    background: var(--color-red-bright);
+    box-shadow: 0 10px 34px -8px rgb(222 61 54 / 0.65);
+  }
+  .btn-line {
+    border: 1px solid var(--color-line-strong);
+    color: var(--color-bone);
+  }
+  .btn-line::after {
+    background: linear-gradient(105deg, transparent 30%, rgb(239 232 220 / 0.14) 50%, transparent 70%);
+  }
+  .btn-line:hover:not(:disabled) {
+    border-color: var(--color-bone);
+  }
+  .btn-bone:active:not(:disabled),
+  .btn-red:active:not(:disabled),
+  .btn-line:active:not(:disabled) {
+    transform: translateY(0) scale(0.97);
+  }
+
+  /* Style tabs (design categories). */
+  .chip-tab {
+    flex: none;
+    min-height: 34px;
+    padding: 0 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-line);
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-mute);
+    background: linear-gradient(var(--color-bone), var(--color-bone)) no-repeat left / 0% 100%;
+    transition:
+      background-size 320ms var(--ease-out-soft),
+      color 200ms ease,
+      border-color 200ms ease;
+  }
+  .chip-tab:hover {
+    color: var(--color-bone);
+    border-color: var(--color-line-strong);
+  }
+  .chip-tab[aria-pressed='true'] {
+    background-size: 100% 100%;
+    border-color: var(--color-bone);
+    color: var(--color-ink-950);
+  }
+
+  /* Collection cards rise in when a style is chosen and lift on hover. */
+  .flash-card {
+    animation: rise 520ms var(--ease-out-soft) both;
+  }
+  .flash-card-art {
+    transition:
+      transform 420ms var(--ease-out-soft),
+      box-shadow 420ms ease;
+  }
+  .group:hover .flash-card-art {
+    transform: translateY(-6px) rotate(-0.6deg);
+    box-shadow: 0 24px 40px -18px rgb(0 0 0 / 0.8), 0 0 0 1px rgb(196 48 43 / 0.5);
+  }
+
+  /* Scrolling ticker. */
+  .marquee {
+    display: flex;
+    width: max-content;
+    animation: marquee 38s linear infinite;
+  }
+  .marquee:hover {
+    animation-play-state: paused;
+  }
+
+  /* The logo badge turns as the page scrolls, and spins when hovered. */
+  .logo-badge {
+    transition: transform 700ms var(--ease-out-soft);
+  }
+  a:hover .logo-badge {
+    transform: rotate(-20deg) scale(1.06);
+  }
+
+  /* Segmented controls (Front/Back/Left/Right, Woman/Man). */
+  .segmented {
+    display: inline-flex;
+    padding: 3px;
+    gap: 2px;
+    border-radius: 999px;
+    border: 1px solid var(--color-line);
+    background: rgb(7 7 7 / 0.72);
+    backdrop-filter: blur(8px);
+  }
+  .segmented button {
+    min-height: 34px;
+    padding: 0 0.85rem;
+    border-radius: 999px;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-mute);
+    transition:
+      background-color 160ms ease,
+      color 160ms ease;
+  }
+  @media (max-width: 420px) {
+    .segmented button {
+      padding: 0 0.6rem;
+      letter-spacing: 0.14em;
+    }
+  }
+  .segmented button:hover:not(:disabled) {
+    color: var(--color-bone);
+  }
+  .segmented button[aria-pressed='true'] {
+    background: var(--color-bone);
+    color: var(--color-ink-950);
+  }
+
+  /* Body-part pills under the viewer. */
+  .pill {
+    flex: none;
+    min-height: 40px;
+    padding: 0 1.05rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-line-strong);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-bone-dim);
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease,
+      color 160ms ease,
+      transform 260ms var(--ease-out-soft);
+  }
+  .pill:hover:not(:disabled) {
+    transform: translateY(-2px);
+    border-color: var(--color-bone);
+    color: var(--color-bone);
+  }
+  .pill[aria-pressed='true'] {
+    background: var(--color-red);
+    border-color: var(--color-red);
+    color: #fff;
+  }
+  .pill:disabled {
+    opacity: 0.4;
+  }
+
+  /* Design tiles: dark ink on bone, like flash sheets. */
+  .tile {
+    position: relative;
+    flex: none;
+    width: 76px;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    background: var(--color-bone);
+    outline: 1px solid transparent;
+    outline-offset: 3px;
+    transition:
+      outline-color 160ms ease,
+      transform 160ms var(--ease-out-soft);
+  }
+  .tile:hover {
+    transform: translateY(-4px) rotate(-3deg) scale(1.04);
+  }
+  .tile:active {
+    transform: scale(0.96);
+  }
+  .tile[aria-pressed='true'] {
+    outline-color: var(--color-red);
+    outline-width: 2px;
+  }
+  .tile img {
+    position: absolute;
+    inset: 12%;
+    width: 76%;
+    height: 76%;
+    object-fit: contain;
+  }
+
+  .swatch {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    box-shadow: inset 0 -8px 14px rgb(0 0 0 / 0.22);
+    outline: 1px solid var(--color-line);
+    outline-offset: 0;
+    transition: outline 160ms ease;
+  }
+  .swatch[aria-pressed='true'] {
+    outline: 2px solid var(--color-bone);
+    outline-offset: 3px;
+  }
+
+  .icon-btn {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    border: 1px solid var(--color-line);
+    background: rgb(7 7 7 / 0.72);
+    color: var(--color-bone);
+    transition: border-color 160ms ease;
+  }
+  .icon-btn:hover:not(:disabled) {
+    border-color: var(--color-bone);
+  }
+  .icon-btn:disabled {
+    opacity: 0.4;
+  }
+
+  .text-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 40px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-mute);
+    transition: color 160ms ease;
+  }
+  .text-btn:hover:not(:disabled) {
+    color: var(--color-bone);
+  }
+  .text-btn:disabled {
+    opacity: 0.4;
+  }
+
+  .range {
+    appearance: none;
+    width: 100%;
+    height: 28px;
+    background: transparent;
+  }
+  .range::-webkit-slider-runnable-track {
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--color-bone) var(--fill, 50%), var(--color-line-strong) var(--fill, 50%));
+  }
+  .range::-moz-range-track {
+    height: 2px;
+    background: var(--color-line-strong);
+  }
+  .range::-moz-range-progress {
+    height: 2px;
+    background: var(--color-bone);
+  }
+  .range::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin-top: -8px;
+    border-radius: 999px;
+    background: var(--color-bone);
+    box-shadow: 0 0 0 4px rgb(7 7 7 / 0.9);
+  }
+  .range::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--color-bone);
+  }
+  .range:disabled {
+    opacity: 0.35;
+  }
+
+  /* Tattoo-flash wall art behind a section. The section needs `relative isolate`. */
+  .flash-wall {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: url('/art/flash-wall');
+    background-size: 760px 760px;
+    mask-image: linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+  }
+
+  /* The 3D box: a sketch wall of realism and etched line art behind the body, drifting slowly. */
+  .viewer-stage {
+    background:
+      radial-gradient(ellipse 50% 46% at 50% 46%, rgb(38 35 32 / 0.85) 0%, transparent 72%),
+      url('/art/viewer-backdrop.webp') 50% 50% / cover no-repeat,
+      linear-gradient(180deg, #151413 0%, #0d0c0c 100%);
+    touch-action: none;
+    animation: backdrop-pan 40s ease-in-out infinite alternate;
+  }
+
+  .grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.07;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    mix-blend-mode: overlay;
+  }
+
+  .loader-ring {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    border: 2px solid var(--color-line-strong);
+    border-top-color: var(--color-bone);
+    animation: spin 0.9s linear infinite;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .reveal {
+    animation: rise 900ms var(--ease-out-soft) both;
+  }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal-on-scroll {
+        animation: rise linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 55%;
+      }
+    }
+  }
+  .drift {
+    animation: drift 18s ease-in-out infinite alternate;
+  }
+  .sheet-in {
+    animation: sheet-in 320ms var(--ease-out-soft) both;
+  }
+  .fade-in {
+    animation: fade-in 220ms ease both;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes drift {
+  from {
+    transform: translate3d(-1.5%, 1%, 0) rotate(-2deg) scale(1);
+  }
+  to {
+    transform: translate3d(1.5%, -1%, 0) rotate(2deg) scale(1.04);
+  }
+}
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes backdrop-pan {
+  from {
+    background-position: 50% 46%, 46% 50%, 0 0;
+  }
+  to {
+    background-position: 50% 46%, 54% 44%, 0 0;
+  }
+}
+@keyframes wall-drift {
+  from {
+    background-position-y: 0;
+  }
+  to {
+    background-position-y: -520px;
+  }
+}
+@keyframes badge-turn {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* Scroll-linked motion: the flash art drifts slower than the page, and the logo badge turns as you scroll. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .flash-wall {
+      animation: wall-drift linear both;
+      animation-timeline: scroll(root);
+    }
+    .logo-badge-spin {
+      animation: badge-turn linear both;
+      animation-timeline: scroll(root);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee {
+    animation: none;
+  }
+  .viewer-stage {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .drift {
+    animation: none;
+  }
+}
