@@ -1,0 +1,3 @@
+# Source material for `npm run film` and `npm run art`. The live site only uses what's in public/.
+assets/
+.claude/
