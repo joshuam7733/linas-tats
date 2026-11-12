@@ -11,3 +11,6 @@ next-env.d.ts
 .claude/
 .DS_Store
 Thumbs.db
+
+.vercel
+.env*
